@@ -60,8 +60,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  build-unsigned-ipa:
-    name: Build unsigned device IPA
+  build-resignable-ipa:
+    name: Build resignable device IPA
     runs-on: macos-15
     timeout-minutes: 30
 
@@ -83,7 +83,14 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build | tee "$RUNNER_TEMP/xcodebuild-device.log"
 
-      - name: Package unsigned IPA
+      - name: Apply ad-hoc signature
+        if: success()
+        run: |
+          APP_PATH="$RUNNER_TEMP/SwipeCleanDeviceDerivedData/Build/Products/Release-iphoneos/SwipeClean.app"
+          /usr/bin/codesign --force --deep --sign - "$APP_PATH"
+          /usr/bin/codesign --verify --deep --strict "$APP_PATH"
+
+      - name: Package resignable IPA
         if: success()
         run: |
           mkdir -p "$RUNNER_TEMP/Payload"
@@ -92,14 +99,14 @@ jobs:
             "$RUNNER_TEMP/Payload/"
           ditto -c -k --sequesterRsrc --keepParent \
             "$RUNNER_TEMP/Payload" \
-            "$RUNNER_TEMP/SwipeClean-unsigned.ipa"
+            "$RUNNER_TEMP/SwipeClean-resignable.ipa"
 
-      - name: Upload unsigned IPA
+      - name: Upload resignable IPA
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: SwipeClean-Unsigned-IPA
-          path: ${{ runner.temp }}/SwipeClean-unsigned.ipa
+          name: SwipeClean-Resignable-IPA
+          path: ${{ runner.temp }}/SwipeClean-resignable.ipa
           if-no-files-found: error
           retention-days: 14
 
