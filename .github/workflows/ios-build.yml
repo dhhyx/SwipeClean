@@ -28,7 +28,7 @@ jobs:
           set -o pipefail
           xcodebuild \
             -project SwipeClean.xcodeproj \
-            -target SwipeClean \
+            -scheme SwipeClean \
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath "$RUNNER_TEMP/SwipeCleanDerivedData" \
