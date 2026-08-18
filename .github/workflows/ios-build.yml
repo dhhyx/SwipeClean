@@ -59,3 +59,55 @@ jobs:
           path: ${{ runner.temp }}/xcodebuild.log
           if-no-files-found: ignore
           retention-days: 14
+
+  build-unsigned-ipa:
+    name: Build unsigned device IPA
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build for iOS Device
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project SwipeClean.xcodeproj \
+            -scheme SwipeClean \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/SwipeCleanDeviceDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build | tee "$RUNNER_TEMP/xcodebuild-device.log"
+
+      - name: Package unsigned IPA
+        if: success()
+        run: |
+          mkdir -p "$RUNNER_TEMP/Payload"
+          cp -R \
+            "$RUNNER_TEMP/SwipeCleanDeviceDerivedData/Build/Products/Release-iphoneos/SwipeClean.app" \
+            "$RUNNER_TEMP/Payload/"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/Payload" \
+            "$RUNNER_TEMP/SwipeClean-unsigned.ipa"
+
+      - name: Upload unsigned IPA
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwipeClean-Unsigned-IPA
+          path: ${{ runner.temp }}/SwipeClean-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload device build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-device-log
+          path: ${{ runner.temp }}/xcodebuild-device.log
+          if-no-files-found: ignore
+          retention-days: 14
