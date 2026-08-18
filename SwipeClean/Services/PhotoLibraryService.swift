@@ -137,7 +137,7 @@ final class PhotoLibraryService: ObservableObject {
     private func setFavorite(_ favorite: Bool, for asset: PHAsset) async {
         do {
             try await PHPhotoLibrary.shared().performChanges {
-                PHAssetChangeRequest(for: asset)?.isFavorite = favorite
+                PHAssetChangeRequest(for: asset).isFavorite = favorite
             }
         } catch { errorMessage = error.localizedDescription }
     }
