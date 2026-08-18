@@ -45,15 +45,15 @@ struct PhotoCardView: View {
         let vertical = offset.height
         if abs(horizontal) > abs(vertical), abs(horizontal) > 35 {
             stamp(horizontal > 0 ? "保留" : "删除", icon: horizontal > 0 ? "checkmark" : "trash.fill", color: horizontal > 0 ? .green : .red)
-                .opacity(min(abs(horizontal) / 120, 1))
+                .opacity(Double(min(abs(horizontal) / CGFloat(120), CGFloat(1))))
         } else if abs(vertical) > 35 {
             stamp(vertical < 0 ? "删除" : "收藏", icon: vertical < 0 ? "trash.fill" : "heart.fill", color: vertical < 0 ? .red : .pink)
-                .opacity(min(abs(vertical) / 120, 1))
+                .opacity(Double(min(abs(vertical) / CGFloat(120), CGFloat(1))))
         }
     }
 
     private func stamp(_ text: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 8) { Image(systemName: icon).font(.system(size: 46, weight: .black)); Text(text).font(.largeTitle.black()) }
+        VStack(spacing: 8) { Image(systemName: icon).font(.system(size: 46, weight: .black)); Text(text).font(.largeTitle.weight(.black)) }
             .foregroundStyle(color).padding(22).background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 20)).rotationEffect(.degrees(-8))
     }
 

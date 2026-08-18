@@ -18,8 +18,12 @@ struct SwipeDeckView: View {
                 ProgressView(value: session.progress).tint(Color(hex: mode.tint)).padding(.horizontal)
                 HStack { Text("\(session.index + min(1, session.items.count))/\(session.items.count)").monospacedDigit(); Spacer(); Text("上滑删除 · 下滑收藏").foregroundStyle(.secondary) }.font(.caption).padding(.horizontal)
                 ZStack {
-                    if let next = session.next { PhotoCardView(item: next, enabled: false) }
-                        .scaleEffect(0.95).opacity(0.55).padding(.top, 14)
+                    if let next = session.next {
+                        PhotoCardView(item: next, enabled: false)
+                            .scaleEffect(0.95)
+                            .opacity(0.55)
+                            .padding(.top, 14)
+                    }
                     if let current = session.current {
                         PhotoCardView(item: current, enabled: true) { decision in Task { await session.decide(decision, using: library) } }
                             .id(current.id)
