@@ -11,7 +11,7 @@ final class PhotoLibraryService: ObservableObject {
 
     private let imageManager = PHCachingImageManager()
     private let decisionsKey = "SwipeClean.decisions.v1"
-    private var decisions: [String: CleanupDecision] = [:]
+    @Published private var decisions: [String: CleanupDecision] = [:]
 
     init() {
         restoreDecisions()
@@ -87,12 +87,17 @@ final class PhotoLibraryService: ObservableObject {
         return groups.map { SimilarGroup(assets: $0) }
     }
 
-    func requestImage(for item: CleanupAsset, targetSize: CGSize, completion: @escaping (UIImage?) -> Void) -> PHImageRequestID {
+    func requestImage(
+        for item: CleanupAsset,
+        targetSize: CGSize,
+        contentMode: PHImageContentMode = .aspectFill,
+        completion: @escaping (UIImage?) -> Void
+    ) -> PHImageRequestID {
         let options = PHImageRequestOptions()
         options.deliveryMode = .opportunistic
         options.resizeMode = .fast
         options.isNetworkAccessAllowed = true
-        return imageManager.requestImage(for: item.asset, targetSize: targetSize, contentMode: .aspectFill, options: options) { image, _ in
+        return imageManager.requestImage(for: item.asset, targetSize: targetSize, contentMode: contentMode, options: options) { image, _ in
             DispatchQueue.main.async { completion(image) }
         }
     }
@@ -102,16 +107,14 @@ final class PhotoLibraryService: ObservableObject {
     func decision(for item: CleanupAsset) -> CleanupDecision { decisions[item.id] ?? .undecided }
 
     func setDecision(_ decision: CleanupDecision, for item: CleanupAsset) async {
-        decisions[item.id] = decision
-        persistDecisions()
+        updateDecision(decision, forID: item.id)
         if decision == .favorite || decision == .keep {
             await setFavorite(decision == .favorite, for: item.asset)
         }
     }
 
     func undoDecision(for item: CleanupAsset) {
-        decisions.removeValue(forKey: item.id)
-        persistDecisions()
+        updateDecision(nil, forID: item.id)
     }
 
     var queuedForDeletion: [CleanupAsset] {
@@ -119,18 +122,32 @@ final class PhotoLibraryService: ObservableObject {
     }
 
     func commitDeletion() async throws {
-        let assets = queuedForDeletion.map(\.asset) as NSArray
+        let queuedItems = queuedForDeletion
+        let assets = queuedItems.map(\.asset) as NSArray
         guard assets.count > 0 else { return }
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetChangeRequest.deleteAssets(assets)
         }
-        for item in queuedForDeletion { decisions.removeValue(forKey: item.id) }
+        let removedIDs = Set(queuedItems.map(\.id))
+        decisions = decisions.filter { !removedIDs.contains($0.key) }
         persistDecisions()
         await reload()
     }
 
     func clearDeletionQueue() {
-        for item in queuedForDeletion { decisions.removeValue(forKey: item.id) }
+        let removedIDs = Set(queuedForDeletion.map(\.id))
+        decisions = decisions.filter { !removedIDs.contains($0.key) }
+        persistDecisions()
+    }
+
+    private func updateDecision(_ decision: CleanupDecision?, forID id: String) {
+        var updated = decisions
+        if let decision {
+            updated[id] = decision
+        } else {
+            updated.removeValue(forKey: id)
+        }
+        decisions = updated
         persistDecisions()
     }
 

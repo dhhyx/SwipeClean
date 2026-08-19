@@ -11,7 +11,12 @@ struct PhotoCardView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                AssetImageView(item: item, targetSize: CGSize(width: proxy.size.width * 2, height: proxy.size.height * 2))
+                Color.black
+                AssetImageView(
+                    item: item,
+                    targetSize: CGSize(width: proxy.size.width * 2, height: proxy.size.height * 2),
+                    contentMode: .fit
+                )
                 LinearGradient(colors: [.clear, .black.opacity(0.72)], startPoint: .center, endPoint: .bottom)
                 decisionOverlay
                 VStack { Spacer(); metadata.padding(18) }

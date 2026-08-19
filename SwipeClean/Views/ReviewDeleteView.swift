@@ -20,7 +20,11 @@ struct ReviewDeleteView: View {
                             ForEach(library.queuedForDeletion) { item in
                                 ZStack(alignment: .topTrailing) {
                                     AssetImageView(item: item, targetSize: CGSize(width: 240, height: 240)).frame(height: 112).clipped()
-                                    Button { library.undoDecision(for: item) } label: {
+                                    Button {
+                                        withAnimation(.snappy) {
+                                            library.undoDecision(for: item)
+                                        }
+                                    } label: {
                                         Image(systemName: "xmark.circle.fill").font(.title2).symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.65)).padding(5)
                                     }
                                 }

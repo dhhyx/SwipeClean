@@ -17,18 +17,32 @@ struct SwipeDeckView: View {
             VStack(spacing: 16) {
                 ProgressView(value: session.progress).tint(Color(hex: mode.tint)).padding(.horizontal)
                 HStack { Text("\(session.index + min(1, session.items.count))/\(session.items.count)").monospacedDigit(); Spacer(); Text("上滑删除 · 下滑收藏").foregroundStyle(.secondary) }.font(.caption).padding(.horizontal)
-                ZStack {
-                    if let next = session.next {
-                        PhotoCardView(item: next, enabled: false)
-                            .scaleEffect(0.95)
-                            .opacity(0.55)
-                            .padding(.top, 14)
-                    }
-                    if let current = session.current {
-                        PhotoCardView(item: current, enabled: true) { decision in Task { await session.decide(decision, using: library) } }
+                GeometryReader { proxy in
+                    let cardAspectRatio: CGFloat = 0.8
+                    let cardWidth = min(proxy.size.width, proxy.size.height * cardAspectRatio)
+                    let cardHeight = cardWidth / cardAspectRatio
+
+                    ZStack {
+                        if let next = session.next {
+                            PhotoCardView(item: next, enabled: false)
+                                .scaleEffect(0.95)
+                                .opacity(0.55)
+                                .offset(y: 10)
+                        }
+                        if let current = session.current {
+                            PhotoCardView(item: current, enabled: true) { decision in
+                                Task { await session.decide(decision, using: library) }
+                            }
                             .id(current.id)
-                    } else { completion }
-                }.padding(.horizontal, 16).frame(maxHeight: .infinity)
+                        } else {
+                            completion
+                        }
+                    }
+                    .frame(width: cardWidth, height: cardHeight)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                }
+                .padding(.horizontal, 16)
+                .frame(maxHeight: .infinity)
                 actionBar
             }
             .background(Color(hex: "090A0E").ignoresSafeArea())
@@ -55,9 +69,13 @@ struct SwipeDeckView: View {
         VStack(spacing: 18) {
             Image(systemName: "checkmark.seal.fill").font(.system(size: 64)).foregroundStyle(.green)
             Text("这一批整理完成").font(.title.bold())
-            Text("已查看 \(session.summary.reviewed) 项，\(session.summary.queuedForDeletion) 项等待删除确认。")
+            Text("已查看 \(session.summary.reviewed) 项，待删除队列现有 \(library.queuedForDeletion.count) 项。")
                 .foregroundStyle(.secondary).multilineTextAlignment(.center)
-            if session.summary.queuedForDeletion > 0 { Button("检查待删除项目") { showingReview = true }.buttonStyle(.borderedProminent).tint(.red) }
+            if !library.queuedForDeletion.isEmpty {
+                Button("检查待删除项目") { showingReview = true }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+            }
         }.padding(30)
     }
 }
