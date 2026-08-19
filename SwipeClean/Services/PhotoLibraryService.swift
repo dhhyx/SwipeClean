@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 import Photos
 import UIKit
 
@@ -103,6 +104,19 @@ final class PhotoLibraryService: ObservableObject {
     }
 
     func cancelImageRequest(_ id: PHImageRequestID) { imageManager.cancelImageRequest(id) }
+
+    func requestPlayerItem(
+        for item: CleanupAsset,
+        completion: @escaping (AVPlayerItem?) -> Void
+    ) -> PHImageRequestID {
+        let options = PHVideoRequestOptions()
+        options.deliveryMode = .automatic
+        options.version = .current
+        options.isNetworkAccessAllowed = true
+        return imageManager.requestPlayerItem(forVideo: item.asset, options: options) { playerItem, _ in
+            DispatchQueue.main.async { completion(playerItem) }
+        }
+    }
 
     func decision(for item: CleanupAsset) -> CleanupDecision { decisions[item.id] ?? .undecided }
 

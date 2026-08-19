@@ -18,7 +18,7 @@ struct SwipeDeckView: View {
                 ProgressView(value: session.progress).tint(Color(hex: mode.tint)).padding(.horizontal)
                 HStack { Text("\(session.index + min(1, session.items.count))/\(session.items.count)").monospacedDigit(); Spacer(); Text("上滑删除 · 下滑收藏").foregroundStyle(.secondary) }.font(.caption).padding(.horizontal)
                 GeometryReader { proxy in
-                    let cardAspectRatio: CGFloat = 0.8
+                    let cardAspectRatio = displayedAspectRatio(for: session.current)
                     let cardWidth = min(proxy.size.width, proxy.size.height * cardAspectRatio)
                     let cardHeight = cardWidth / cardAspectRatio
 
@@ -77,5 +77,11 @@ struct SwipeDeckView: View {
                     .tint(.red)
             }
         }.padding(30)
+    }
+
+    private func displayedAspectRatio(for item: CleanupAsset?) -> CGFloat {
+        guard let asset = item?.asset, asset.pixelWidth > 0, asset.pixelHeight > 0 else { return 0.8 }
+        let originalRatio = CGFloat(asset.pixelWidth) / CGFloat(asset.pixelHeight)
+        return min(max(originalRatio, 0.42), 2.2)
     }
 }
